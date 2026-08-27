@@ -1,0 +1,30 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/web",
+  "installCommand": "npm install",
+  "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/api/v1/health"
+    },
+    {
+      "src": "/api/v1/dashboard",
+      "dest": "/api/v1/dashboard/status"
+    },
+    {
+      "src": "/api/readiness",
+      "dest": "/api/v1/readiness"
+    },
+    {
+      "src": "/api/ai/newsroom/(.*)",
+      "dest": "/api/ai/newsroom?__orbit_path=$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
+    }
+  ]
+}

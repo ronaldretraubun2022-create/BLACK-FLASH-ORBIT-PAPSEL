@@ -1,0 +1,62 @@
+{
+  "name": "black-flash-orbit",
+  "version": "1.0.0",
+  "description": "BLACK FLASH ORBIT Prime Engineering Ecosystem",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c blue,magenta \"npm:server\" \"npm:web\"",
+    "start": "node server/index.js",
+    "lint": "node scripts/lint-project.mjs",
+    "test": "npm run test:newsroom && npm run test:knowledge && npm run test:security",
+    "test:newsroom": "node tests/newsroom.guard.test.js",
+    "test:knowledge": "node --test tests/knowledge/index.test.js",
+    "test:security": "node --test tests/security/index.test.js",
+    "server": "nodemon server/index.js",
+    "web": "vite",
+    "build": "node scripts/build-web.mjs",
+    "verify": "npm run lint && npm test && npm run build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "black-flash",
+    "orbit",
+    "express",
+    "ai",
+    "dashboard",
+    "osint",
+    "security"
+  ],
+  "author": "BLACK FLASH",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.107.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "fast-glob": "^3.3.3",
+    "helmet": "^8.2.0",
+    "lucide-react": "^1.17.0",
+    "mammoth": "^1.12.0",
+    "multer": "^2.1.1",
+    "pdf-parse": "^2.4.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.18.2"
+  },
+  "overrides": {
+    "body-parser": "^2.3.0",
+    "ip-address": "^10.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^10.0.0",
+    "nodemon": "^3.1.14",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0"
+  }
+}
