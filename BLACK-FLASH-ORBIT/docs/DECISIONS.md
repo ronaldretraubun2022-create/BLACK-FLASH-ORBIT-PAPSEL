@@ -2,6 +2,38 @@
 
 Keputusan baru ditambahkan di bagian paling atas. Jangan menghapus keputusan lama; tandai `Superseded` dan tautkan penggantinya.
 
+## ADR-014 - v1.4 expands incrementally from the verified modular monolith
+
+- Status: Accepted
+- Date: 2026-08-27
+
+### Context
+
+BLACK FLASH ORBIT v1.4 introduces a ten-phase roadmap across ORBIT Core,
+AI Workspace, Intelligence, Web Builder, Newsroom, Workflow, Agent Bridge,
+Security Center, Observability, and ORBIT OS integration. The application
+already has working domain modules, security tests, AI provider boundaries,
+Supabase Auth/RLS, and production gate scripts.
+
+### Decision
+
+v1.4 will extend existing modules in place using the current React/Vite,
+Node/Express, Supabase, and OpenRouter/OpenAI architecture. Feature work
+must proceed phase by phase, revalidating lint, tests, build, security, and
+bundle-secret boundaries before moving forward.
+
+No phase may rewrite the app, replace the framework, bypass backend
+authorization, disable RLS, expose service-role/provider secrets, or remove
+existing tests to force a pass.
+
+### Consequences
+
+- v1.4 can ship meaningful product upgrades without destabilizing the
+  current modular monolith.
+- Larger features must be decomposed into route, service, UI, migration, and
+  test changes with explicit acceptance criteria.
+- Commit, push, tag, merge, and deploy remain explicit approval actions.
+
 ## ADR-013 - Intelligence Summary aggregates verification without approving publication
 
 - Status: Accepted

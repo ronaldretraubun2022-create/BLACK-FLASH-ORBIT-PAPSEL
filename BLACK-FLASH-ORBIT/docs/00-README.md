@@ -6,7 +6,8 @@ Release baseline: `Developer Agent Bridge v1.3`
 ## Purpose
 
 This package is the execution contract for taking BLACK FLASH ORBIT from
-the current development-ready baseline to a production-ready release.
+the current development-ready baseline to a production-ready release and
+then continuing into the v1.4 product roadmap.
 
 Execute strictly in this order:
 
@@ -18,6 +19,8 @@ Execute strictly in this order:
 5.  STOP and produce Phase 2 report.
 6.  Only after approval: `04-PHASE-3-FINAL-QA-PRODUCTION-RELEASE.md`
 7.  Produce final Production Readiness Report.
+8.  Only after production-readiness evidence is accepted:
+    `06-V1.4-CODEX-PRD-ROADMAP.md`
 
 ## Non-negotiable rules
 
@@ -37,3 +40,5 @@ Execute strictly in this order:
     `npm run build`.
 -   Do not begin the next phase until the previous phase is PASS and
     explicitly approved.
+-   v1.4 feature work must preserve every existing module and must finish
+    each phase with lint, test, build, and security evidence.

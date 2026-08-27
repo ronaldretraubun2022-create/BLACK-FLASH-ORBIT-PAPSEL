@@ -223,3 +223,113 @@ Exit criteria:
 - [ ] Update `docs/SECURITY.md` saat auth/permission berubah.
 - [ ] Catat keputusan penting di `docs/DECISIONS.md`.
 
+## v1.4 Phase Roadmap
+
+Dokumen utama: `docs/06-V1.4-CODEX-PRD-ROADMAP.md`.
+
+### V14-P0 --- Baseline gate
+
+- [ ] Reconfirm Build PASS.
+- [ ] Reconfirm Security PASS.
+- [ ] Reconfirm Newsroom PASS.
+- [ ] Reconfirm Knowledge PASS.
+- [ ] Reconfirm Workflow PASS.
+- [ ] Reconfirm Runtime PASS.
+- [ ] Reconfirm Responsive PASS.
+- [ ] Run `npm run verify`.
+
+Acceptance:
+
+- Baseline evidence is current before v1.4 feature work starts.
+
+### V14-P1 --- ORBIT CORE
+
+- [ ] Unified Dashboard.
+- [ ] Global Search.
+- [ ] Notifications.
+- [ ] Activity.
+- [ ] AI Usage.
+- [ ] Runtime/Health Widgets.
+- [ ] Command Palette preservation.
+
+Acceptance:
+
+- Existing dashboard, profile, telemetry, and command palette regressions stay
+  green.
+
+### V14-P2 --- AI Workspace 2.0
+
+- [ ] Prompt Library.
+- [ ] Categories.
+- [ ] Favorites.
+- [ ] History.
+- [ ] Variables.
+- [ ] Versioning.
+- [ ] Sessions.
+- [ ] Model Switcher.
+
+### V14-P3 --- Intelligence Pro
+
+- [ ] Semantic Search.
+- [ ] Timeline.
+- [ ] Evidence Graph.
+- [ ] Entity Graph.
+- [ ] AI Investigation.
+
+### V14-P4 --- Web Builder Pro
+
+- [ ] Drag and Drop.
+- [ ] Inspector.
+- [ ] Components.
+- [ ] Responsive Preview.
+- [ ] Theme.
+- [ ] Publish.
+
+### V14-P5 --- AI Newsroom Pro
+
+- [ ] Editorial Queue.
+- [ ] Fact Checker.
+- [ ] AI Reviewer.
+- [ ] SEO.
+- [ ] Publishing Queue.
+
+### V14-P6 --- Workflow Automation Pro
+
+- [ ] Visual Workflow.
+- [ ] Scheduler.
+- [ ] Webhooks.
+- [ ] AI Steps.
+- [ ] Logs.
+
+### V14-P7 --- Agent Bridge Pro
+
+- [ ] Repository Scan.
+- [ ] Patch Generator.
+- [ ] Code Review.
+- [ ] Approval Queue.
+
+### V14-P8 --- Security Center Pro
+
+- [ ] MFA.
+- [ ] Device Manager.
+- [ ] Session Manager.
+- [ ] Threat Monitor.
+- [ ] Secret Scanner.
+
+### V14-P9 --- Observability
+
+- [ ] CPU.
+- [ ] Memory.
+- [ ] Database.
+- [ ] AI Provider.
+- [ ] Logs.
+- [ ] Metrics.
+- [ ] Alerts.
+
+### V14-P10 --- ORBIT Operating System
+
+- [ ] Integrate all modules.
+- [ ] Run final `npm run verify`.
+- [ ] Run final security regression.
+- [ ] Run final responsive QA.
+- [ ] Run final bundle secret inspection.
