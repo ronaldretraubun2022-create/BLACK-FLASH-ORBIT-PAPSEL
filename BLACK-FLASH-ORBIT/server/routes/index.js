@@ -26,6 +26,8 @@ const MAX_PROMPT_TITLE_LENGTH = 140;
 const MAX_PROMPT_CATEGORY_LENGTH = 64;
 const MAX_PROMPT_CONTENT_LENGTH = 12000;
 const MAX_PROMPT_IMPORT_ITEMS = 100;
+const MAX_GLOBAL_SEARCH_QUERY_LENGTH = 120;
+const MAX_GLOBAL_SEARCH_RESULTS = 10;
 
 
 const PROFILE_CACHE_TTL_MS = 10_000;
@@ -172,6 +174,51 @@ const automationJobs = [
     status: "READY",
     schedule: "manual",
     route: "/api/v1/security",
+  },
+];
+
+const coreModuleSearchIndex = [
+  {
+    id: "module:command-center",
+    title: "Command Center",
+    description: "Unified dashboard, runtime health, activity, and release telemetry.",
+    route: "/",
+    keywords: ["dashboard", "runtime", "health", "activity", "notifications"],
+  },
+  {
+    id: "module:ai-workspace",
+    title: "AI Workspace",
+    description: "Prompt library, sessions, model controls, and AI chat workspace.",
+    route: "/ai-workspace",
+    keywords: ["ai", "prompt", "model", "chat", "usage"],
+  },
+  {
+    id: "module:ai-newsroom",
+    title: "AI Newsroom",
+    description: "Editorial drafting, verification, source confidence, and archive.",
+    route: "/ai-newsroom",
+    keywords: ["newsroom", "editorial", "draft", "source", "verification"],
+  },
+  {
+    id: "module:knowledge-base",
+    title: "Knowledge Base",
+    description: "Owner-scoped document search, RAG context, and citations.",
+    route: "/knowledge-base",
+    keywords: ["knowledge", "rag", "documents", "search", "citations"],
+  },
+  {
+    id: "module:workflow-automation",
+    title: "Workflow Automation",
+    description: "Workflow definitions, runs, approvals, and execution history.",
+    route: "/workflow-automation",
+    keywords: ["workflow", "automation", "runs", "approval", "history"],
+  },
+  {
+    id: "module:security-center",
+    title: "Security Center",
+    description: "Auth, role, runtime audit, and security posture signals.",
+    route: "/#security",
+    keywords: ["security", "auth", "role", "audit", "runtime"],
   },
 ];
 
@@ -329,6 +376,14 @@ function normalizePromptIcon(value, fallback = "tag") {
 
 function normalizePromptContent(value) {
   return normalizeText(value).slice(0, MAX_PROMPT_CONTENT_LENGTH);
+}
+
+function normalizeLimit(value, fallback = MAX_GLOBAL_SEARCH_RESULTS) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return fallback;
+
+  return Math.min(Math.max(Math.floor(number), 1), MAX_GLOBAL_SEARCH_RESULTS);
 }
 
 function normalizeBoolean(value, fallback = false) {
@@ -1035,6 +1090,232 @@ function createModuleResponse({
     metrics,
     message: "Module ready for staging.",
     ...extra,
+  };
+}
+
+function createCoreErrorResponse(res, error, fallbackMessage) {
+  const statusCode = error.statusCode || error.status || 500;
+  const safeStatusCode =
+    statusCode >= 400 && statusCode < 600 ? statusCode : 500;
+
+  return res.status(safeStatusCode).json({
+    success: false,
+    code: error.code || "ORBIT_CORE_REQUEST_FAILED",
+    message:
+      safeStatusCode >= 500
+        ? fallbackMessage
+        : error.message || fallbackMessage,
+  });
+}
+
+function createSearchText(...values) {
+  return values
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function matchesSearchQuery(item, query) {
+  const cleanQuery = normalizeText(query).toLowerCase();
+
+  if (!cleanQuery) return false;
+
+  return createSearchText(
+    item.title,
+    item.description,
+    item.category,
+    item.type,
+    ...(item.keywords || []),
+  ).includes(cleanQuery);
+}
+
+function createPromptSearchResult(prompt) {
+  return {
+    id: `prompt:${prompt.id}`,
+    category: prompt.category,
+    description: `Prompt Library / ${prompt.category}`,
+    route: "/ai-workspace#prompt-library",
+    source: "prompt_library",
+    title: prompt.title,
+    type: "prompt",
+    updatedAt: prompt.updatedAt || prompt.createdAt || null,
+  };
+}
+
+function createAutomationSearchResult(item) {
+  return {
+    id: `automation:${item.id}`,
+    category: item.jobId || item.type || "workflow",
+    description: item.detail || item.summary || item.result || "Workflow event.",
+    route: "/workflow-automation",
+    source: "workflow_history",
+    title: item.title || item.reportCode || item.type || "Workflow Activity",
+    type: "activity",
+    updatedAt: item.createdAt || item.time || null,
+  };
+}
+
+function createModuleSearchResult(item) {
+  return {
+    id: item.id,
+    category: "module",
+    description: item.description,
+    route: item.route,
+    source: "orbit_core",
+    title: item.title,
+    type: "module",
+    updatedAt: null,
+  };
+}
+
+async function getGlobalSearchResults(user, query, limit) {
+  const cleanQuery = normalizeText(query).slice(0, MAX_GLOBAL_SEARCH_QUERY_LENGTH);
+
+  if (cleanQuery.length < 2) return [];
+
+  const [prompts, automationHistory] = await Promise.all([
+    getPrompts(user, { search: cleanQuery }),
+    getAutomationHistory(user, limit),
+  ]);
+
+  return [
+    ...coreModuleSearchIndex
+      .filter((item) => matchesSearchQuery(item, cleanQuery))
+      .map(createModuleSearchResult),
+    ...prompts.map(createPromptSearchResult),
+    ...automationHistory
+      .map(createAutomationSearchResult)
+      .filter((item) => matchesSearchQuery(item, cleanQuery)),
+  ].slice(0, limit);
+}
+
+function createNotification({
+  actionLabel = "Review",
+  id,
+  message,
+  route = "/",
+  severity = "info",
+  title,
+}) {
+  return {
+    actionLabel,
+    createdAt: new Date().toISOString(),
+    id,
+    message,
+    read: false,
+    route,
+    severity,
+    title,
+  };
+}
+
+async function getCoreNotifications(user) {
+  const health = getHealthSnapshot();
+  const readiness = await getReadinessSnapshot().catch(() => null);
+  const operational = getOperationalIntelligence({ user });
+  const notifications = [];
+
+  if (health.status !== "healthy") {
+    notifications.push(
+      createNotification({
+        id: "runtime-health",
+        message: `Runtime status ${health.status || "unknown"}.`,
+        severity: "warning",
+        title: "Runtime requires review",
+      }),
+    );
+  }
+
+  if (readiness?.status && readiness.status !== "ready") {
+    notifications.push(
+      createNotification({
+        id: "readiness-check",
+        message: `Readiness status ${readiness.status}.`,
+        severity: "warning",
+        title: "Readiness degraded",
+      }),
+    );
+  }
+
+  if (operational.aiChat.failures > 0) {
+    notifications.push(
+      createNotification({
+        id: "ai-chat-failures",
+        message: `${operational.aiChat.failures} AI request failure(s) observed for this session.`,
+        route: "/ai-workspace",
+        severity: "warning",
+        title: "AI provider failures detected",
+      }),
+    );
+  }
+
+  if (operational.workflow.failed > 0) {
+    notifications.push(
+      createNotification({
+        id: "workflow-failures",
+        message: `${operational.workflow.failed} workflow run(s) need attention.`,
+        route: "/workflow-automation",
+        severity: "warning",
+        title: "Workflow failure detected",
+      }),
+    );
+  }
+
+  if (operational.workflow.waitingApproval > 0) {
+    notifications.push(
+      createNotification({
+        actionLabel: "Approve",
+        id: "workflow-approvals",
+        message: `${operational.workflow.waitingApproval} workflow run(s) waiting approval.`,
+        route: "/workflow-automation",
+        severity: "action",
+        title: "Workflow approval pending",
+      }),
+    );
+  }
+
+  if (!notifications.length) {
+    notifications.push(
+      createNotification({
+        actionLabel: "Open",
+        id: "orbit-core-ready",
+        message: "Runtime, AI usage, and workflow signals are clear.",
+        severity: "success",
+        title: "ORBIT Core ready",
+      }),
+    );
+  }
+
+  return notifications;
+}
+
+function createAiUsageSnapshot(user) {
+  const aiChat = getOperationalIntelligence({ user }).aiChat;
+
+  return {
+    averageProviderLatencyMs: aiChat.averageProviderLatencyMs,
+    failedRequests: aiChat.failures,
+    latest: aiChat.latest
+      ? {
+          model: aiChat.latest.model,
+          provider: aiChat.latest.provider,
+          providerLatencyMs: aiChat.latest.providerLatencyMs,
+          providerReached: aiChat.latest.providerReached,
+          status: aiChat.latest.status,
+          timestamp: aiChat.latest.timestamp,
+        }
+      : null,
+    providerReached: aiChat.providerReached,
+    recent: aiChat.recent.map((item) => ({
+      model: item.model,
+      provider: item.provider,
+      providerLatencyMs: item.providerLatencyMs,
+      providerReached: item.providerReached,
+      status: item.status,
+      timestamp: item.timestamp,
+    })),
+    successfulRequests: aiChat.successes,
+    totalRequests: aiChat.total,
   };
 }
 

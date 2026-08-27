@@ -77,12 +77,21 @@ function recordWorkflowTelemetry(event = {}) {
   }
 }
 
-function getAiChatObservability() {
-  const total = aiChatEvents.length;
-  const successes = aiChatEvents.filter((event) => event.status === "success").length;
-  const failures = aiChatEvents.filter((event) => event.status === "failed").length;
-  const providerReached = aiChatEvents.filter((event) => event.providerReached).length;
-  const providerLatencies = aiChatEvents
+function getAiChatEventsForUser(user) {
+  const userHash = hashValue(user?.id || user?.userId);
+
+  if (!userHash) return aiChatEvents;
+
+  return aiChatEvents.filter((event) => event.userHash === userHash);
+}
+
+function getAiChatObservability({ user } = {}) {
+  const scopedEvents = getAiChatEventsForUser(user);
+  const total = scopedEvents.length;
+  const successes = scopedEvents.filter((event) => event.status === "success").length;
+  const failures = scopedEvents.filter((event) => event.status === "failed").length;
+  const providerReached = scopedEvents.filter((event) => event.providerReached).length;
+  const providerLatencies = scopedEvents
     .map((event) => event.providerLatencyMs)
     .filter((value) => Number.isFinite(value));
   const averageProviderLatencyMs = providerLatencies.length
@@ -95,9 +104,9 @@ function getAiChatObservability() {
   return {
     averageProviderLatencyMs,
     failures,
-    latest: aiChatEvents[0] || null,
+    latest: scopedEvents[0] || null,
     providerReached,
-    recent: aiChatEvents.slice(0, 5).map((event) => ({ ...event })),
+    recent: scopedEvents.slice(0, 5).map((event) => ({ ...event })),
     successes,
     total,
   };
@@ -199,7 +208,7 @@ function getOperationalIntelligence({ user } = {}) {
   const health = getHealthSnapshot();
 
   return {
-    aiChat: getAiChatObservability(),
+    aiChat: getAiChatObservability({ user }),
     authSession: getAuthSessionVisibility(user),
     deployment: getDeploymentMetadata(health),
     moduleHealth: getModuleHealth(health),
@@ -216,6 +225,7 @@ function resetOperationalTelemetryForTests() {
 }
 
 module.exports = {
+  getAiChatObservability,
   getOperationalIntelligence,
   recordAiChatTelemetry,
   recordWorkflowTelemetry,
